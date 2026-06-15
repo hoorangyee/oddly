@@ -1,100 +1,112 @@
 # Polly 🎲
 
-점수로 즐기는 **사내 예측 베팅 · 랭킹** 서비스. 실제 돈은 걸지 않고, 점수(포인트)로
-폴리마켓처럼 주제(마켓)에 베팅하고 잘 맞춘 사람이 리더보드 위로 올라갑니다.
+A **prediction-market betting & ranking** app for teams — for fun, with points instead of
+real money. Bet on questions (markets) Polymarket-style; whoever predicts best climbs the
+leaderboard. No money, just bragging rights.
 
-- **파리뮤추얼(pool) 방식** — 여러 결과에 모인 점수 풀을 맞춘 사람들이 비율대로 나눠 가짐. 베팅이 모일수록 확률(%)이 실시간으로 움직임.
-- **멀티테넌트** — 하나의 인스턴스에서 여러 조직이 격리되어 사용. 각 조직은 마켓·멤버·리더보드가 독립.
-- **닉네임만으로 참여** — 멤버는 초대 코드 + 닉네임으로 입장(비밀번호 없음). 관리자만 비밀키로 권한 행사.
+- **Parimutuel (pool) model** — points staked on each outcome form a pool; winners split the
+  total pool in proportion to their stake. The more bets come in, the more the odds (%) move in real time.
+- **Multi-tenant** — many organizations run isolated on a single instance. Each org has its own
+  markets, members, and leaderboard.
+- **Nickname-only join** — members enter with an invite code + nickname (no passwords). Only
+  admins act via secret keys.
 
-## 역할
+## Roles
 
-| 역할 | 인증 | 권한 |
-|------|------|------|
-| 멤버 | 조직 초대 코드 + 닉네임 | 마켓 생성, 베팅, 댓글/반응 |
-| 조직 관리자 | 조직 `adminKey` | 결과 확정/무효, 시즌 리셋 |
-| 슈퍼관리자 | env `SUPER_ADMIN_KEY` | 조직 생성/삭제(인스턴스 운영자) |
+| Role | Auth | Can do |
+|------|------|--------|
+| Member | Org invite code + nickname | Create markets, bet, comment/react |
+| Org admin | Org `adminKey` | Resolve/void markets, reset season |
+| Super admin | env `SUPER_ADMIN_KEY` | Create/delete orgs (instance operator) |
 
-## 빠른 시작 (로컬)
+## Quick start (local)
 
 ```bash
 npm install
-cp .env.example .env        # 값 채우기 (아래 참고)
-npx prisma migrate dev      # DB 생성 + 마이그레이션
-npm run db:seed             # 데모 조직/마켓/멤버 시드 (선택)
+cp .env.example .env        # fill in values (see below)
+npx prisma migrate dev      # create DB + run migrations
+npm run db:seed             # seed a demo org/markets/members (optional)
 npm run dev                 # http://localhost:3000
 ```
 
-`db:seed` 를 실행하면 데모 조직 정보(초대 코드, 관리자 키)가 콘솔에 출력됩니다.
-브라우저에서 `http://localhost:3000/demo` 로 접속해 둘러보세요.
+`db:seed` prints the demo org's credentials (invite code, admin key) to the console.
+Open `http://localhost:3000/demo` in your browser to look around.
 
-### 환경 변수 (`.env`)
+### Environment variables (`.env`)
 
 ```bash
-DATABASE_URL="file:./dev.db"          # 개발: 로컬 SQLite / 운영: libsql://...(Turso)
-DATABASE_AUTH_TOKEN=""                # Turso 운영에서만 필요 (로컬은 비움)
-SESSION_SECRET="..."                  # 세션 쿠키 서명 (32바이트 hex 권장)
-SUPER_ADMIN_KEY="..."                 # 슈퍼관리자 키 = 인스턴스 운영자
+DATABASE_URL="file:./dev.db"          # local: SQLite file / prod: libsql://... (Turso)
+DATABASE_AUTH_TOKEN=""                # only needed for Turso in production (empty locally)
+SESSION_SECRET="..."                  # signs session cookies (32-byte hex recommended)
+SUPER_ADMIN_KEY="..."                 # super admin key = instance operator
 ```
 
-`SESSION_SECRET` 생성: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+Generate `SESSION_SECRET`: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
-## 사용 흐름
+## How it works
 
-1. `/admin` 에서 슈퍼관리자 키로 로그인 → 조직 생성 (초대 코드 + 관리자 키 발급, **1회만 표시**).
-2. 멤버는 `/{slug}/join?invite=CODE` 로 닉네임 입장 → 시작 점수 지급.
-3. 누구나 `/{slug}/markets/new` 에서 마켓 생성(예/아니오 또는 멀티초이스).
-4. 마감 전까지 베팅 → 확률·배당이 풀 비율로 갱신.
-5. 조직 관리자가 마켓 상세에서 **승리 결과 확정** → 자동 정산(풀을 승자에게 비율 분배).
-6. `/{slug}/leaderboard` 에서 보유 점수 순위 확인. 시즌 리셋으로 새 시즌 시작.
+1. At `/admin`, log in with the super admin key → create an org (invite code + admin key are
+   shown **once**).
+2. Members join at `/{slug}/join?invite=CODE` with a nickname → they receive the starting balance.
+3. Anyone can create a market at `/{slug}/markets/new` (Yes/No or multiple choice).
+4. Members bet until the close time → probabilities and payouts update by pool ratio.
+5. An org admin **resolves** a market (picks the winning outcome) → automatic settlement
+   (the pool is distributed to winners proportionally).
+6. Check standings at `/{slug}/leaderboard`. Reset the season to start fresh.
 
-## 점수 / 정산
+## Points & settlement
 
-- 모든 멤버는 동일 시작 점수로 시작, 추가 지급 없음. 리더보드는 **보유 점수(=시작점 대비 누적 손익)** 순.
-- 정산: 승리 결과 `W`, 총 풀 `T`, `W` 풀 `P_W` 일 때 승자 환급 `= floor(stake / P_W × T)`.
-  반올림 잔여는 최대 잔여 방식으로 분배되어 **총 풀이 정확히 보존**됨.
-- 승리 풀이 비어 있으면 전원 환불(무효). 관리자가 무효 처리해도 전원 환불.
+- Everyone starts with the same balance; there are no top-ups. The leaderboard ranks by
+  **current balance** (= starting balance ± cumulative P&L).
+- Settlement: for winning outcome `W`, total pool `T`, and `W`'s pool `P_W`, each winner is paid
+  `floor(stake / P_W × T)`. The flooring remainder is distributed by the largest-remainder method,
+  so **the total pool is conserved exactly**.
+- If nobody bet on the winning outcome, everyone is refunded (void). An admin can also void a
+  market to refund all bets.
 
-## 기술 스택
+## Tech stack
 
 - **Next.js 16 (App Router) + TypeScript** · Server Actions · Tailwind CSS v4
-- **Prisma 7 + libSQL/SQLite** — 로컬은 SQLite 파일, 운영은 **Turso**(libsql). 동일한 `@prisma/adapter-libsql` 어댑터로 개발/운영을 모두 커버하고 스키마 provider 는 `sqlite` 그대로
-- 세션: `jose` 서명 쿠키 (비밀번호 없음)
-- 정산 로직: `lib/parimutuel.ts` (순수 함수, Vitest 단위 테스트)
+- **Prisma 7 + libSQL/SQLite** — a local SQLite file in dev, **Turso** (libSQL) in production. The
+  same `@prisma/adapter-libsql` adapter covers both; the schema provider stays `sqlite`.
+- Sessions: signed cookies via `jose` (no passwords)
+- Settlement logic: `lib/parimutuel.ts` (pure functions, unit-tested with Vitest)
 
-## 스크립트
+## Scripts
 
 ```bash
-npm run dev        # 개발 서버
-npm run build      # 프로덕션 빌드
-npm test           # 단위 테스트 (정산 로직)
-npm run db:seed    # 데모 데이터 시드
-npm run db:reset   # DB 초기화(마이그레이션 재적용)
+npm run dev        # dev server
+npm run build      # production build
+npm test           # unit tests (settlement logic)
+npm run db:seed    # seed demo data
+npm run db:reset   # reset DB (re-apply migrations)
 ```
 
-## 배포 (운영, 멀티테넌트) — Turso
+## Deploy (production, multi-tenant) — Turso
 
-DB는 **Turso**(SQLite 호환 호스팅)를 사용합니다. 스키마/마이그레이션을 그대로 쓰며
-코드 변경이 없습니다(어댑터가 로컬 file: 과 원격 libsql:// 을 모두 처리).
+The database uses **Turso** (hosted, SQLite-compatible). The schema and migrations are reused
+as-is and no code changes are needed — the adapter handles both local `file:` and remote
+`libsql://`.
 
 ```bash
-# 1) Turso DB 생성
+# 1) Create the Turso database
 turso db create polly
 turso db show --url polly            # → DATABASE_URL (libsql://...)
 turso db tokens create polly         # → DATABASE_AUTH_TOKEN
 
-# 2) 스키마(테이블) 적용 — 마이그레이션 SQL 을 그대로 실행
+# 2) Apply the schema (tables) — run the migration SQL as-is
 turso db shell polly < prisma/migrations/*/migration.sql
 ```
 
-3. 호스팅(예: Vercel)에 환경변수 등록: `DATABASE_URL`, `DATABASE_AUTH_TOKEN`,
-   `SESSION_SECRET`, `SUPER_ADMIN_KEY` (레포에 커밋 금지).
-4. 배포. 빌드 시 `postinstall` 의 `prisma generate` 가 클라이언트를 생성합니다.
-5. `/admin` 에서 슈퍼관리자 키로 로그인 → 조직 생성. 슈퍼관리자 키를 아는 사람만 조직을 만들 수 있습니다.
+3. Set environment variables on your host (e.g. Vercel): `DATABASE_URL`, `DATABASE_AUTH_TOKEN`,
+   `SESSION_SECRET`, `SUPER_ADMIN_KEY` (never commit them).
+4. Deploy. The `postinstall` script runs `prisma generate` to produce the client at build time.
+5. Log in at `/admin` with the super admin key → create an org. Only someone who knows the super
+   admin key can create orgs.
 
-> 참고: 표준 PostgreSQL(Neon/Supabase)로 가려면 `schema.prisma` 의 provider 를 `postgresql`
-> 로 바꾸고 `lib/db.ts` 어댑터를 `@prisma/adapter-pg` 로 교체한 뒤 마이그레이션을 재생성하면 됩니다.
+> Prefer standard PostgreSQL (Neon/Supabase)? Switch `schema.prisma`'s provider to `postgresql`,
+> swap the `lib/db.ts` adapter to `@prisma/adapter-pg`, and regenerate the migrations.
 
-## 라이선스
+## License
 
-MIT — [LICENSE](./LICENSE) 참고.
+MIT — see [LICENSE](./LICENSE).
