@@ -1,0 +1,6 @@
+# Vercel CLI 직접 배포 시 업로드 제외 (환경변수는 Vercel 프로젝트 설정에서 주입)
+.env
+.env.*
+dev.db
+dev.db-journal
+.preview-*.png
