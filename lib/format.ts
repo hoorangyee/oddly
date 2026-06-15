@@ -1,3 +1,5 @@
+import { KST_TIME_ZONE } from "./time";
+
 export function formatPoints(n: number): string {
   return n.toLocaleString("ko-KR") + "P";
 }
@@ -24,5 +26,9 @@ export function closesInLabel(closesAt: Date): string {
 }
 
 export function formatDateTime(d: Date): string {
-  return d.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: KST_TIME_ZONE,
+  });
 }

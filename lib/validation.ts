@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MarketType } from "./constants";
+import { parseKstDateTimeLocal } from "./time";
 
 export const nicknameSchema = z
   .string()
@@ -17,7 +18,22 @@ export const createMarketSchema = z
     title: z.string().trim().min(1, "제목을 입력하세요").max(140, "제목은 140자 이하"),
     description: z.string().trim().max(1000, "설명은 1000자 이하").default(""),
     type: z.enum([MarketType.BINARY, MarketType.MULTI]),
-    closesAt: z.coerce.date().refine((d) => d.getTime() > Date.now(), "마감 시각은 미래여야 합니다"),
+    // datetime-local 문자열을 KST 벽시계로 해석한다.
+    closesAt: z
+      .string()
+      .min(1, "마감 시각을 입력하세요")
+      .transform((s, ctx) => {
+        const d = parseKstDateTimeLocal(s);
+        if (!d) {
+          ctx.addIssue("마감 시각 형식이 올바르지 않습니다");
+          return z.NEVER;
+        }
+        if (d.getTime() <= Date.now()) {
+          ctx.addIssue("마감 시각은 미래여야 합니다");
+          return z.NEVER;
+        }
+        return d;
+      }),
     // MULTI 일 때만 사용. 줄바꿈으로 구분된 선택지.
     outcomes: z.array(z.string().trim().min(1).max(40)).optional(),
   })

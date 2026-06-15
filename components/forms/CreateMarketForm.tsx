@@ -3,22 +3,18 @@
 import { useActionState, useEffect, useState } from "react";
 import { createMarket } from "@/lib/actions/markets";
 import { MarketType } from "@/lib/constants";
+import { toKstDateTimeLocal } from "@/lib/time";
 import { SubmitButton } from "../SubmitButton";
 import { inputClass, labelClass, FieldError } from "../ui";
-
-function toLocalInput(d: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function CreateMarketForm({ orgId, orgSlug }: { orgId: string; orgSlug: string }) {
   const [state, action] = useActionState(createMarket, null);
   const [type, setType] = useState<string>(MarketType.BINARY);
   const [closesAt, setClosesAt] = useState("");
 
-  // 마운트 후 기본 마감(+3일) 설정 — SSR 하이드레이션 불일치 방지
+  // 마운트 후 기본 마감(+3일, KST) 설정 — SSR 하이드레이션 불일치 방지
   useEffect(() => {
-    setClosesAt(toLocalInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)));
+    setClosesAt(toKstDateTimeLocal(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)));
   }, []);
 
   return (
