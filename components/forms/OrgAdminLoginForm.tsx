@@ -19,7 +19,7 @@ export function OrgAdminLoginForm({ orgSlug }: { orgSlug: string }) {
           name="adminKey"
           type="password"
           className={inputClass}
-          placeholder="polly_admin_..."
+          placeholder="oddly_admin_..."
           autoFocus
         />
       </div>

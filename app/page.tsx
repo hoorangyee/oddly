@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-16">
       <h1 className="text-4xl font-bold tracking-tight text-slate-800">
-        <span className="text-violet-700">Polly</span> 🎲
+        <span className="text-violet-700">Oddly</span> 🎲
       </h1>
       <p className="mt-3 text-lg text-slate-600">
         점수로 즐기는 사내 예측 베팅 · 랭킹 서비스. 돈은 안 걸어요, 자존심만 걸어요.

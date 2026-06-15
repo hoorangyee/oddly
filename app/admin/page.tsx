@@ -14,7 +14,7 @@ export default async function SuperAdminPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold text-violet-700">
-          Polly
+          Oddly
         </Link>
         <span className="text-sm text-slate-500">슈퍼관리자</span>
       </div>

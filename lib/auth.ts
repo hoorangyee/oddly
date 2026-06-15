@@ -37,7 +37,7 @@ const COOKIE_OPTS = {
 // ── 멤버 세션 (조직별 쿠키) ────────────────────────────────────────
 export type MemberSession = { memberId: string; nickname: string; orgId: string };
 
-const memberCookie = (orgId: string) => `polly_m_${orgId}`;
+const memberCookie = (orgId: string) => `oddly_m_${orgId}`;
 
 export async function setMemberSession(s: MemberSession): Promise<void> {
   const token = await sign({ ...s });
@@ -56,7 +56,7 @@ export async function clearMemberSession(orgId: string): Promise<void> {
 }
 
 // ── 조직 관리자 세션 (조직별 쿠키) ─────────────────────────────────
-const adminCookie = (orgId: string) => `polly_a_${orgId}`;
+const adminCookie = (orgId: string) => `oddly_a_${orgId}`;
 
 export async function setOrgAdminSession(orgId: string): Promise<void> {
   const token = await sign({ orgId, role: "org-admin" });
@@ -74,7 +74,7 @@ export async function clearOrgAdminSession(orgId: string): Promise<void> {
 }
 
 // ── 슈퍼관리자 세션 (env 키 기반) ──────────────────────────────────
-const SUPER_COOKIE = "polly_super";
+const SUPER_COOKIE = "oddly_super";
 
 export function verifySuperKey(key: string): boolean {
   const expected = process.env.SUPER_ADMIN_KEY;

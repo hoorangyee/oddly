@@ -1,4 +1,4 @@
-# Polly 🎲
+# Oddly 🎲
 
 A **prediction-market betting & ranking** app for teams — for fun, with points instead of
 real money. Bet on questions (markets) Polymarket-style; whoever predicts best climbs the
@@ -90,12 +90,12 @@ as-is and no code changes are needed — the adapter handles both local `file:` 
 
 ```bash
 # 1) Create the Turso database
-turso db create polly
-turso db show --url polly            # → DATABASE_URL (libsql://...)
-turso db tokens create polly         # → DATABASE_AUTH_TOKEN
+turso db create oddly
+turso db show --url oddly            # → DATABASE_URL (libsql://...)
+turso db tokens create oddly         # → DATABASE_AUTH_TOKEN
 
 # 2) Apply the schema (tables) — run the migration SQL as-is
-turso db shell polly < prisma/migrations/*/migration.sql
+turso db shell oddly < prisma/migrations/*/migration.sql
 ```
 
 3. Set environment variables on your host (e.g. Vercel): `DATABASE_URL`, `DATABASE_AUTH_TOKEN`,

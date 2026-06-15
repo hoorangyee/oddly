@@ -14,7 +14,7 @@ export function OrgNav({ org, member, isAdmin }: Props) {
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <Link href={`/${org.slug}`} className="text-lg font-bold tracking-tight text-violet-700">
-          Polly
+          Oddly
         </Link>
         <span className="text-sm text-slate-500">{org.name}</span>
         <Badge color="slate">시즌 {org.season}</Badge>

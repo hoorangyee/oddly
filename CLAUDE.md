@@ -1,13 +1,13 @@
 @AGENTS.md
 
-# Polly — 프로젝트 노트
+# Oddly — 프로젝트 노트
 
 점수 기반 사내 예측 베팅(파리뮤추얼) · 멀티테넌트 웹앱. 자세한 개요는 `README.md`.
 
 ## 구조
 - `lib/parimutuel.ts` — 정산 순수 함수(단위 테스트 `lib/parimutuel.test.ts`). 점수 보존 보장.
 - `lib/db.ts` — Prisma 7 클라이언트(libSQL 어댑터). 로컬 `file:` + 운영 Turso(`libsql://`) 동일 어댑터. provider 는 `sqlite`.
-- `lib/auth.ts` — jose 서명 쿠키 세션(멤버/조직관리자/슈퍼관리자). 멤버는 조직별 쿠키 `polly_m_<orgId>`.
+- `lib/auth.ts` — jose 서명 쿠키 세션(멤버/조직관리자/슈퍼관리자). 멤버는 조직별 쿠키 `oddly_m_<orgId>`.
 - `lib/keys.ts` — 키 해싱·초대코드/관리자키 생성(next/headers 비의존).
 - `lib/data.ts` — 읽기 쿼리, `lib/validation.ts` — zod 스키마, `lib/constants.ts` — 상태/유형 상수(enum 미사용).
 - `lib/actions/*.ts` — Server Actions (`auth`, `orgs`, `markets`, `social`).

@@ -26,5 +26,5 @@ export function newInviteCode(): string {
 // 조직 관리자 키(생성 시 1회 노출). 길고 추측 불가하게.
 const keyAlpha = customAlphabet("abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789", 24);
 export function newAdminKey(): string {
-  return `polly_admin_${keyAlpha()}`;
+  return `oddly_admin_${keyAlpha()}`;
 }

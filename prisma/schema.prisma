@@ -1,6 +1,6 @@
-// Polly — 사내 예측 베팅(점수제) 서비스
-// SQLite(개발) 기준. enum은 SQLite 미지원이라 String + lib/constants.ts 의 상수로 표현.
-// 운영 전환 시 datasource provider 만 postgresql 로 바꾸면 됨(이식 가능하게 작성).
+// Oddly — 사내 예측 베팅(점수제) 서비스
+// SQLite/libSQL 기준. enum은 미지원이라 String + lib/constants.ts 의 상수로 표현.
+// 로컬은 SQLite 파일, 운영은 Turso(libsql) — provider 는 sqlite 그대로 사용.
 
 generator client {
   provider = "prisma-client"
