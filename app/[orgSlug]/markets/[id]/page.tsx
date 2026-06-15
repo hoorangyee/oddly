@@ -12,8 +12,10 @@ import { Card, Badge, MarketStatusBadge } from "@/components/ui";
 import { OddsBar } from "@/components/OddsBar";
 import { BetForm } from "@/components/forms/BetForm";
 import { CommentForm } from "@/components/forms/CommentForm";
+import { OutcomeBettors } from "@/components/OutcomeBettors";
 import { ReactionBar } from "@/components/ReactionBar";
 import { ResolvePanel } from "@/components/ResolvePanel";
+import { cancelBet } from "@/lib/actions/markets";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { MarketType, MarketStatus, BetStatus } from "@/lib/constants";
 import { formatPoints, formatDateTime, closesInLabel } from "@/lib/format";
@@ -108,6 +110,22 @@ export default async function MarketPage({
         </Card>
       )}
 
+      {/* 옵션별 베팅 현황 */}
+      <OutcomeBettors
+        orgSlug={orgSlug}
+        marketId={market.id}
+        outcomes={market.outcomes.map((o) => ({ id: o.id, label: o.label }))}
+        bets={market.bets.map((b) => ({
+          id: b.id,
+          outcomeId: b.outcomeId,
+          amount: b.amount,
+          status: b.status,
+          member: { nickname: b.member.nickname },
+        }))}
+        admin={admin}
+        canVoid={!resolved}
+      />
+
       {/* 내 베팅 */}
       {myBets.length > 0 && (
         <Card className="p-5">
@@ -125,6 +143,20 @@ export default async function MarketPage({
                       <span className="tabular-nums text-emerald-700">+{formatPoints(b.payout)}</span>
                     )}
                     <Badge color={s.color}>{s.label}</Badge>
+                    {!closed && b.status === BetStatus.ACTIVE && (
+                      <form action={cancelBet}>
+                        <input type="hidden" name="orgId" value={org.id} />
+                        <input type="hidden" name="orgSlug" value={orgSlug} />
+                        <input type="hidden" name="marketId" value={market.id} />
+                        <input type="hidden" name="betId" value={b.id} />
+                        <button
+                          type="submit"
+                          className="shrink-0 whitespace-nowrap text-xs text-slate-400 hover:text-rose-600 hover:underline"
+                        >
+                          취소
+                        </button>
+                      </form>
+                    )}
                   </span>
                 </li>
               );

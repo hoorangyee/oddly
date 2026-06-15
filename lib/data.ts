@@ -54,6 +54,10 @@ export async function getMarketDetail(orgId: string, marketId: string) {
         orderBy: { createdAt: "asc" },
       },
       reactions: { include: { member: { select: { nickname: true } } } },
+      bets: {
+        include: { member: { select: { nickname: true } } },
+        orderBy: { amount: "desc" },
+      },
     },
   });
   return market;
@@ -105,6 +109,33 @@ export async function getLeaderboard(orgId: string): Promise<LeaderboardRow[]> {
   });
 
   return rows.sort((a, b) => b.balance - a.balance || a.nickname.localeCompare(b.nickname));
+}
+
+// 조직 멤버 목록(잔액 포함) — 관리자 포인트 조정 대상 선택용
+export async function listMembers(orgId: string) {
+  return prisma.member.findMany({
+    where: { orgId },
+    select: { id: true, nickname: true, balance: true },
+    orderBy: { nickname: "asc" },
+  });
+}
+
+// 조직 공지사항 — 최신순. 마켓 목록 상단 배너 / 관리자 페이지 공용.
+export async function listAnnouncements(orgId: string) {
+  return prisma.announcement.findMany({
+    where: { orgId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+// 최근 포인트 조정 로그 — 관리자 페이지 표시용
+export async function listPointAdjustments(orgId: string, limit = 20) {
+  return prisma.pointAdjustment.findMany({
+    where: { orgId },
+    include: { member: { select: { nickname: true } } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 }
 
 export async function getPastStandings(orgId: string) {

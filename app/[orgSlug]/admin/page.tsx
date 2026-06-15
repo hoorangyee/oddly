@@ -1,10 +1,20 @@
 import Link from "next/link";
-import { getOrgBySlug, listMarkets } from "@/lib/data";
+import {
+  getOrgBySlug,
+  listMarkets,
+  listMembers,
+  listAnnouncements,
+  listPointAdjustments,
+} from "@/lib/data";
 import { isOrgAdmin } from "@/lib/auth";
 import { orgAdminLogout } from "@/lib/actions/auth";
 import { resetSeason } from "@/lib/actions/orgs";
+import { deleteAnnouncement } from "@/lib/actions/admin";
 import { OrgAdminLoginForm } from "@/components/forms/OrgAdminLoginForm";
-import { Card, Badge, MarketStatusBadge } from "@/components/ui";
+import { AdjustPointsForm } from "@/components/forms/AdjustPointsForm";
+import { AnnouncementForm } from "@/components/forms/AnnouncementForm";
+import { Card, MarketStatusBadge } from "@/components/ui";
+import { formatDateTime, formatPoints } from "@/lib/format";
 import { MarketStatus } from "@/lib/constants";
 
 export default async function OrgAdminPage({
@@ -29,7 +39,12 @@ export default async function OrgAdminPage({
     );
   }
 
-  const markets = await listMarkets(org.id);
+  const [markets, members, announcements, adjustments] = await Promise.all([
+    listMarkets(org.id),
+    listMembers(org.id),
+    listAnnouncements(org.id),
+    listPointAdjustments(org.id),
+  ]);
   const pending = markets.filter(
     (m) => m.status !== MarketStatus.RESOLVED && m.status !== MarketStatus.VOID,
   );
@@ -61,6 +76,61 @@ export default async function OrgAdminPage({
           </div>
           <div className="text-slate-400">현재 시즌: {org.season}</div>
         </div>
+      </Card>
+
+      {/* 공지사항 */}
+      <Card className="p-5">
+        <h2 className="mb-3 text-sm font-semibold text-slate-500">공지사항</h2>
+        <AnnouncementForm orgSlug={orgSlug} />
+        {announcements.length > 0 && (
+          <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4">
+            {announcements.map((a) => (
+              <li key={a.id} className="flex items-start justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <p className="whitespace-pre-wrap text-slate-700">{a.body}</p>
+                  <span className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
+                </div>
+                <form action={deleteAnnouncement}>
+                  <input type="hidden" name="orgSlug" value={orgSlug} />
+                  <input type="hidden" name="announcementId" value={a.id} />
+                  <button
+                    type="submit"
+                    className="shrink-0 whitespace-nowrap text-xs text-slate-400 hover:text-rose-600 hover:underline"
+                  >
+                    삭제
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* 포인트 조정 */}
+      <Card className="p-5">
+        <h2 className="mb-3 text-sm font-semibold text-slate-500">포인트 지급 · 차감</h2>
+        <AdjustPointsForm orgSlug={orgSlug} members={members} />
+        {adjustments.length > 0 && (
+          <ul className="mt-4 space-y-1 border-t border-slate-100 pt-4 text-sm">
+            {adjustments.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-2">
+                <span className="truncate text-slate-600">
+                  {a.member.nickname}
+                  {a.reason && <span className="text-slate-400"> · {a.reason}</span>}
+                </span>
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`tabular-nums font-medium ${a.amount >= 0 ? "text-emerald-700" : "text-rose-600"}`}
+                  >
+                    {a.amount >= 0 ? "+" : "−"}
+                    {formatPoints(Math.abs(a.amount))}
+                  </span>
+                  <span className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       {/* 정산 대기 마켓 */}

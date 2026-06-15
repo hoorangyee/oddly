@@ -21,9 +21,11 @@ model Organization {
   season          Int      @default(1)
   createdAt       DateTime @default(now())
 
-  members   Member[]
-  markets   Market[]
-  standings SeasonStanding[]
+  members          Member[]
+  markets          Market[]
+  standings        SeasonStanding[]
+  announcements    Announcement[]
+  pointAdjustments PointAdjustment[]
 }
 
 model Member {
@@ -34,10 +36,11 @@ model Member {
   balance   Int
   createdAt DateTime @default(now())
 
-  createdMarkets Market[]   @relation("MarketCreator")
-  bets           Bet[]
-  comments       Comment[]
-  reactions      Reaction[]
+  createdMarkets   Market[]   @relation("MarketCreator")
+  bets             Bet[]
+  comments         Comment[]
+  reactions        Reaction[]
+  pointAdjustments PointAdjustment[]
 
   @@unique([orgId, nickname])
 }
@@ -115,6 +118,32 @@ model Reaction {
   createdAt DateTime @default(now())
 
   @@unique([marketId, memberId, emoji])
+}
+
+// 조직 공지사항 — 조직 관리자가 작성, 마켓 목록 상단에 배너로 노출
+model Announcement {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([orgId])
+}
+
+// 관리자 포인트 조정 로그 — amount 양수=지급 / 음수=차감
+model PointAdjustment {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([orgId])
+  @@index([memberId])
 }
 
 // 시즌 리셋 시 직전 시즌 최종 순위를 아카이브

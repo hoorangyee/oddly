@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getOrgBySlug, listMarkets } from "@/lib/data";
+import { getOrgBySlug, listMarkets, listAnnouncements } from "@/lib/data";
 import { MarketCard } from "@/components/MarketCard";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { Card } from "@/components/ui";
 
@@ -9,11 +10,15 @@ export default async function OrgHome({ params }: { params: Promise<{ orgSlug: s
   const org = await getOrgBySlug(orgSlug);
   if (!org) return null;
 
-  const markets = await listMarkets(org.id);
+  const [markets, announcements] = await Promise.all([
+    listMarkets(org.id),
+    listAnnouncements(org.id),
+  ]);
 
   return (
     <div className="space-y-4">
       <AutoRefresh />
+      <AnnouncementBanner announcements={announcements} />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">마켓</h1>
         <Link

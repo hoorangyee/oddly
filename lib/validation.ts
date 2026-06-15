@@ -55,6 +55,24 @@ export const commentSchema = z.object({
   body: z.string().trim().min(1, "내용을 입력하세요").max(500, "500자 이하"),
 });
 
+export const ADJUST_ALL = "ALL";
+
+export const adjustPointsSchema = z.object({
+  // 대상: 특정 멤버 id 또는 전체("ALL")
+  target: z.string().trim().min(1, "대상을 선택하세요"),
+  // 양수=지급, 음수=차감. 0 불가.
+  amount: z.coerce
+    .number()
+    .int("정수만 가능")
+    .refine((n) => n !== 0, "0이 아닌 값을 입력하세요")
+    .refine((n) => Math.abs(n) <= 100_000_000, "값이 너무 큽니다"),
+  reason: z.string().trim().max(200, "사유는 200자 이하").default(""),
+});
+
+export const announcementSchema = z.object({
+  body: z.string().trim().min(1, "내용을 입력하세요").max(500, "500자 이하"),
+});
+
 export const createOrgSchema = z.object({
   name: z.string().trim().min(1, "조직 이름을 입력하세요").max(40),
   slug: z
