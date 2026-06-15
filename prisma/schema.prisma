@@ -1,0 +1,132 @@
+// Polly — 사내 예측 베팅(점수제) 서비스
+// SQLite(개발) 기준. enum은 SQLite 미지원이라 String + lib/constants.ts 의 상수로 표현.
+// 운영 전환 시 datasource provider 만 postgresql 로 바꾸면 됨(이식 가능하게 작성).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Organization {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  inviteCode      String   @unique
+  adminKeyHash    String
+  startingBalance Int      @default(10000)
+  season          Int      @default(1)
+  createdAt       DateTime @default(now())
+
+  members   Member[]
+  markets   Market[]
+  standings SeasonStanding[]
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  nickname  String
+  balance   Int
+  createdAt DateTime @default(now())
+
+  createdMarkets Market[]   @relation("MarketCreator")
+  bets           Bet[]
+  comments       Comment[]
+  reactions      Reaction[]
+
+  @@unique([orgId, nickname])
+}
+
+model Market {
+  id          String   @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creatorId   String
+  creator     Member   @relation("MarketCreator", fields: [creatorId], references: [id])
+  title       String
+  description String   @default("")
+  type        String   @default("BINARY") // BINARY | MULTI
+  status      String   @default("OPEN")   // OPEN | CLOSED | RESOLVED | VOID
+  closesAt    DateTime
+  resolvedOutcomeId String?
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  outcomes  Outcome[]
+  bets      Bet[]
+  comments  Comment[]
+  reactions Reaction[]
+
+  @@index([orgId, status])
+}
+
+model Outcome {
+  id        String @id @default(cuid())
+  marketId  String
+  market    Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  label     String
+  poolTotal Int    @default(0) // 캐시: 해당 결과에 모인 총 스테이크
+  sortOrder Int    @default(0)
+
+  bets Bet[]
+}
+
+model Bet {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  outcomeId String
+  outcome   Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount    Int
+  status    String   @default("ACTIVE") // ACTIVE | WON | LOST | REFUNDED
+  payout    Int? // 정산 후 환급액(승=배당, 환불=원금, 패=0)
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([memberId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([marketId, memberId, emoji])
+}
+
+// 시즌 리셋 시 직전 시즌 최종 순위를 아카이브
+model SeasonStanding {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  season    Int
+  nickname  String
+  balance   Int
+  rank      Int
+  createdAt DateTime @default(now())
+
+  @@index([orgId, season])
+}
