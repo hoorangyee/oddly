@@ -26,6 +26,7 @@ model Organization {
   standings        SeasonStanding[]
   announcements    Announcement[]
   pointAdjustments PointAdjustment[]
+  inquiries        Inquiry[]
 }
 
 model Member {
@@ -41,6 +42,7 @@ model Member {
   comments         Comment[]
   reactions        Reaction[]
   pointAdjustments PointAdjustment[]
+  inquiries        Inquiry[]
 
   @@unique([orgId, nickname])
 }
@@ -140,6 +142,23 @@ model PointAdjustment {
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
   amount    Int
   reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([orgId])
+  @@index([memberId])
+}
+
+// 멤버 → 조직 관리자 문의. 관리자가 reply 로 답변, status 로 해결 여부 관리.
+model Inquiry {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  body      String
+  reply     String?
+  repliedAt DateTime?
+  status    String   @default("OPEN") // OPEN | RESOLVED
   createdAt DateTime @default(now())
 
   @@index([orgId])

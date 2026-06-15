@@ -22,6 +22,12 @@ export const BetStatus = {
 } as const;
 export type BetStatus = (typeof BetStatus)[keyof typeof BetStatus];
 
+export const InquiryStatus = {
+  OPEN: "OPEN", // 접수됨(미해결)
+  RESOLVED: "RESOLVED", // 처리 완료
+} as const;
+export type InquiryStatus = (typeof InquiryStatus)[keyof typeof InquiryStatus];
+
 export const DEFAULT_STARTING_BALANCE = 10000;
 export const MIN_BET = 1;
 

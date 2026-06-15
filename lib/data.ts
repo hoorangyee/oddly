@@ -138,6 +138,29 @@ export async function listPointAdjustments(orgId: string, limit = 20) {
   });
 }
 
+// 멤버 본인의 문의 목록(답변 포함) — 최신순
+export async function listInquiriesForMember(orgId: string, memberId: string) {
+  return prisma.inquiry.findMany({
+    where: { orgId, memberId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+// 조직 전체 문의 목록(관리자용) — 미해결 먼저, 그다음 최신순
+export async function listInquiries(orgId: string) {
+  const rows = await prisma.inquiry.findMany({
+    where: { orgId },
+    include: { member: { select: { nickname: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.sort((a, b) => {
+    const aOpen = a.status === "OPEN";
+    const bOpen = b.status === "OPEN";
+    if (aOpen !== bOpen) return aOpen ? -1 : 1;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+}
+
 export async function getPastStandings(orgId: string) {
   const rows = await prisma.seasonStanding.findMany({
     where: { orgId },

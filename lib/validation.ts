@@ -73,6 +73,14 @@ export const announcementSchema = z.object({
   body: z.string().trim().min(1, "내용을 입력하세요").max(500, "500자 이하"),
 });
 
+export const inquirySchema = z.object({
+  body: z.string().trim().min(1, "문의 내용을 입력하세요").max(1000, "1000자 이하"),
+});
+
+export const inquiryReplySchema = z.object({
+  reply: z.string().trim().min(1, "답변 내용을 입력하세요").max(1000, "1000자 이하"),
+});
+
 export const createOrgSchema = z.object({
   name: z.string().trim().min(1, "조직 이름을 입력하세요").max(40),
   slug: z
