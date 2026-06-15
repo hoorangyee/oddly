@@ -6,7 +6,7 @@
 
 ## 구조
 - `lib/parimutuel.ts` — 정산 순수 함수(단위 테스트 `lib/parimutuel.test.ts`). 점수 보존 보장.
-- `lib/db.ts` — Prisma 7 클라이언트(better-sqlite3 어댑터). 운영 전환 시 어댑터만 교체.
+- `lib/db.ts` — Prisma 7 클라이언트(libSQL 어댑터). 로컬 `file:` + 운영 Turso(`libsql://`) 동일 어댑터. provider 는 `sqlite`.
 - `lib/auth.ts` — jose 서명 쿠키 세션(멤버/조직관리자/슈퍼관리자). 멤버는 조직별 쿠키 `polly_m_<orgId>`.
 - `lib/keys.ts` — 키 해싱·초대코드/관리자키 생성(next/headers 비의존).
 - `lib/data.ts` — 읽기 쿼리, `lib/validation.ts` — zod 스키마, `lib/constants.ts` — 상태/유형 상수(enum 미사용).
