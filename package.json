@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
+    "fix:closesat-kst": "tsx scripts/fix-closesat-kst.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

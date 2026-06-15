@@ -43,6 +43,9 @@ yarn-error.log*
 # local preview screenshots
 .preview-*.png
 
+# one-shot migration apply log
+/scripts/.closesat-kst-applied.json
+
 # vercel
 .vercel
 
