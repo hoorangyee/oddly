@@ -37,6 +37,11 @@ export function OrgNav({ org, member, isAdmin }: Props) {
               + 새 마켓
             </Link>
           )}
+          {member && (
+            <Link href={`/${org.slug}/settings`} className="hover:text-violet-700">
+              설정
+            </Link>
+          )}
           <Link href={`/${org.slug}/admin`} className="hover:text-violet-700">
             {isAdmin ? "관리자 ✓" : "관리자"}
           </Link>
@@ -55,12 +60,17 @@ export function OrgNav({ org, member, isAdmin }: Props) {
               </form>
             </span>
           ) : (
-            <Link
-              href={`/${org.slug}/join`}
-              className="rounded-lg bg-violet-600 px-3 py-1 font-medium text-white hover:bg-violet-700"
-            >
-              참여하기
-            </Link>
+            <span className="flex items-center gap-3">
+              <Link href={`/${org.slug}/login`} className="hover:text-violet-700">
+                로그인
+              </Link>
+              <Link
+                href={`/${org.slug}/join`}
+                className="rounded-lg bg-violet-600 px-3 py-1 font-medium text-white hover:bg-violet-700"
+              >
+                참여하기
+              </Link>
+            </span>
           )}
         </nav>
       </div>

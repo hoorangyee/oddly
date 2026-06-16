@@ -76,7 +76,7 @@ export default async function MarketPage({
           <Badge color={market.type === MarketType.MULTI ? "violet" : "slate"}>
             {market.type === MarketType.MULTI ? "멀티초이스" : "예 / 아니오"}
           </Badge>
-          <span>by {market.creator.nickname}</span>
+          <span>by {market.creator?.nickname ?? "탈퇴한 사용자"}</span>
           <span>마감 {formatDateTime(market.closesAt)}</span>
           {market.status === MarketStatus.OPEN && !closed && <span>· {closesInLabel(market.closesAt)}</span>}
         </div>

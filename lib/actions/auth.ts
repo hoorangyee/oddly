@@ -47,5 +47,5 @@ export async function memberLogout(formData: FormData): Promise<void> {
   const slug = String(formData.get("orgSlug") ?? "");
   const org = await getOrgBySlug(slug);
   if (org) await clearMemberSession(org.id);
-  redirect(`/${slug}/join`);
+  redirect(`/${slug}/login`);
 }

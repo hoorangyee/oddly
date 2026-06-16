@@ -13,6 +13,8 @@ import { deleteAnnouncement } from "@/lib/actions/admin";
 import { OrgAdminLoginForm } from "@/components/forms/OrgAdminLoginForm";
 import { AdjustPointsForm } from "@/components/forms/AdjustPointsForm";
 import { AnnouncementForm } from "@/components/forms/AnnouncementForm";
+import { DeleteMemberButton } from "@/components/forms/DeleteMemberButton";
+import { SetMemberPinForm } from "@/components/forms/SetMemberPinForm";
 import { Card, MarketStatusBadge } from "@/components/ui";
 import { formatDateTime, formatPoints } from "@/lib/format";
 import { MarketStatus } from "@/lib/constants";
@@ -127,6 +129,42 @@ export default async function OrgAdminPage({
                   </span>
                   <span className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
                 </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* 멤버 관리 */}
+      <Card className="p-5">
+        <h2 className="mb-1 text-sm font-semibold text-slate-500">멤버 관리 ({members.length})</h2>
+        <p className="mb-3 text-xs text-slate-400">
+          PIN 미설정 멤버에게 PIN을 지정해 전달하세요. 멤버는 로그인 후 설정에서 변경할 수 있습니다.
+          삭제 시 베팅·댓글·기록이 모두 삭제됩니다(만든 마켓은 유지).
+        </p>
+        {members.length === 0 ? (
+          <p className="text-sm text-slate-400">멤버가 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {members.map((m) => (
+              <li key={m.id} className="rounded-lg border border-slate-100 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm text-slate-700">
+                    {m.nickname}
+                    <span
+                      className={`ml-2 text-xs ${m.pinHash ? "text-emerald-600" : "text-amber-600"}`}
+                    >
+                      {m.pinHash ? "PIN 설정됨" : "PIN 미설정"}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="tabular-nums text-sm text-slate-500">{formatPoints(m.balance)}</span>
+                    <DeleteMemberButton orgSlug={orgSlug} memberId={m.id} nickname={m.nickname} />
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <SetMemberPinForm orgSlug={orgSlug} memberId={m.id} />
+                </div>
               </li>
             ))}
           </ul>

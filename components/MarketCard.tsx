@@ -13,7 +13,7 @@ type MarketCardData = {
   closesAt: Date;
   closed: boolean;
   resolvedOutcomeId: string | null;
-  creator: { nickname: string };
+  creator: { nickname: string } | null;
   outcomes: { id: string; label: string; poolTotal: number }[];
   reactions: ReactionListItem[];
   _count: { bets: number; comments: number };
@@ -42,7 +42,7 @@ export function MarketCard({ orgSlug, market }: { orgSlug: string; market: Marke
           <span>💬 {market._count.comments}</span>
           <ReactionPreview reactions={reactionPreview} />
           <span className="ml-auto">
-            {market.status === "OPEN" ? closesInLabel(market.closesAt) : `by ${market.creator.nickname}`}
+            {market.status === "OPEN" ? closesInLabel(market.closesAt) : `by ${market.creator?.nickname ?? "탈퇴한 사용자"}`}
           </span>
         </div>
       </Card>

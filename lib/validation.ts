@@ -8,10 +8,23 @@ export const nicknameSchema = z
   .min(1, "닉네임을 입력하세요")
   .max(20, "닉네임은 20자 이하");
 
+export const pinSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4,6}$/, "PIN은 숫자 4~6자리");
+
 export const joinSchema = z.object({
   inviteCode: z.string().trim().min(1, "초대 코드를 입력하세요"),
   nickname: nicknameSchema,
+  pin: pinSchema,
 });
+
+export const loginSchema = z.object({
+  nickname: nicknameSchema,
+  pin: pinSchema,
+});
+
+export const setPinSchema = z.object({ pin: pinSchema });
 
 export const createMarketSchema = z
   .object({
