@@ -29,6 +29,9 @@ export function OrgNav({ org, member, isAdmin }: Props) {
           <Link href={`/${org.slug}/contact`} className="hover:text-violet-700">
             문의
           </Link>
+          <Link href={`/${org.slug}/emojis`} className="hover:text-violet-700">
+            이모지
+          </Link>
           {member && (
             <Link href={`/${org.slug}/markets/new`} className="hover:text-violet-700">
               + 새 마켓

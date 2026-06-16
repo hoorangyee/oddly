@@ -5,6 +5,7 @@ import {
   getMarketDetail,
   getCurrentMember,
   getMemberBetsForMarket,
+  listCustomEmojis,
   isBettingClosed,
 } from "@/lib/data";
 import { isOrgAdmin } from "@/lib/auth";
@@ -19,6 +20,7 @@ import { cancelBet } from "@/lib/actions/markets";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { MarketType, MarketStatus, BetStatus } from "@/lib/constants";
 import { formatPoints, formatDateTime, closesInLabel } from "@/lib/format";
+import { groupReactions, type ReactionListItem } from "@/lib/reactions";
 
 const BET_STATUS: Record<string, { label: string; color: string }> = {
   ACTIVE: { label: "대기", color: "blue" },
@@ -38,11 +40,20 @@ export default async function MarketPage({
   const market = await getMarketDetail(org.id, id);
   if (!market) notFound();
 
-  const [member, admin] = await Promise.all([getCurrentMember(org.id), isOrgAdmin(org.id)]);
+  const [member, admin, customEmojis] = await Promise.all([
+    getCurrentMember(org.id),
+    isOrgAdmin(org.id),
+    listCustomEmojis(org.id),
+  ]);
   const closed = isBettingClosed(market);
   const resolved = market.status === MarketStatus.RESOLVED || market.status === MarketStatus.VOID;
   const winning = market.outcomes.find((o) => o.id === market.resolvedOutcomeId);
   const myBets = member ? await getMemberBetsForMarket(market.id, member.id) : [];
+  const customEmojiOptions = customEmojis.map((emoji) => ({
+    id: emoji.id,
+    shortcode: emoji.shortcode,
+    imageUrl: emoji.imageUrl,
+  }));
 
   return (
     <div className="space-y-5">
@@ -178,9 +189,10 @@ export default async function MarketPage({
       <ReactionBar
         orgId={org.id}
         orgSlug={orgSlug}
-        marketId={market.id}
-        reactions={market.reactions.map((r) => ({ emoji: r.emoji, memberId: r.memberId }))}
-        currentMemberId={member?.id ?? null}
+        target={{ type: "MARKET", id: market.id }}
+        groupedReactions={groupReactions(toReactionItems(market.reactions), member?.id ?? null)}
+        customEmojis={customEmojiOptions}
+        canReact={member != null}
       />
 
       {/* 댓글 */}
@@ -195,6 +207,15 @@ export default async function MarketPage({
               <span className="font-medium text-slate-700">{c.member.nickname}</span>{" "}
               <span className="text-xs text-slate-400">{formatDateTime(c.createdAt)}</span>
               <p className="whitespace-pre-wrap text-slate-600">{c.body}</p>
+              <ReactionBar
+                orgId={org.id}
+                orgSlug={orgSlug}
+                target={{ type: "COMMENT", id: c.id }}
+                groupedReactions={groupReactions(toReactionItems(c.reactions), member?.id ?? null)}
+                customEmojis={customEmojiOptions}
+                canReact={member != null}
+                className="mt-2"
+              />
             </li>
           ))}
         </ul>
@@ -212,4 +233,18 @@ export default async function MarketPage({
       </Card>
     </div>
   );
+}
+
+function toReactionItems(
+  reactions: {
+    memberId: string;
+    emoji: string | null;
+    customEmoji: { id: string; shortcode: string; imageUrl: string } | null;
+  }[],
+): ReactionListItem[] {
+  return reactions.map((reaction) => ({
+    memberId: reaction.memberId,
+    emoji: reaction.emoji,
+    customEmoji: reaction.customEmoji,
+  }));
 }
