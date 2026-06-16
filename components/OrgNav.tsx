@@ -34,6 +34,11 @@ export function OrgNav({ org, member, isAdmin }: Props) {
               + 새 마켓
             </Link>
           )}
+          {member && (
+            <Link href={`/${org.slug}/settings`} className="hover:text-violet-700">
+              설정
+            </Link>
+          )}
           <Link href={`/${org.slug}/admin`} className="hover:text-violet-700">
             {isAdmin ? "관리자 ✓" : "관리자"}
           </Link>

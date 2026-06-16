@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../db";
 import { getOrgBySlug } from "../data";
 import { isOrgAdmin } from "../auth";
-import { adjustPointsSchema, announcementSchema, ADJUST_ALL } from "../validation";
+import { adjustPointsSchema, announcementSchema, ADJUST_ALL, setPinSchema } from "../validation";
 import { BetStatus } from "../constants";
+import { hashKey } from "../keys";
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -68,6 +69,27 @@ export async function createAnnouncement(
   revalidatePath(`/${slug}`);
   revalidatePath(`/${slug}/admin`);
   return { ok: true };
+}
+
+// ── 멤버 PIN 지정/재설정 (조직 관리자) ─────────────────────────────
+// 로그아웃해 자가 설정이 불가능한 멤버를 위해 관리자가 PIN을 정해 전달.
+// 멤버는 이 PIN으로 로그인 후 설정에서 변경할 수 있다.
+export async function setMemberPin(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const slug = String(formData.get("orgSlug") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const org = await getOrgBySlug(slug);
+  if (!org) return { error: "조직을 찾을 수 없습니다" };
+  if (!(await isOrgAdmin(org.id))) return { error: "권한이 없습니다" };
+
+  const parsed = setPinSchema.safeParse({ pin: formData.get("pin") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
+
+  const member = await prisma.member.findFirst({ where: { id: memberId, orgId: org.id } });
+  if (!member) return { error: "멤버를 찾을 수 없습니다" };
+
+  await prisma.member.update({ where: { id: member.id }, data: { pinHash: hashKey(parsed.data.pin) } });
+  revalidatePath(`/${slug}/admin`);
+  return { ok: true, message: `${member.nickname}의 PIN을 설정했습니다` };
 }
 
 // ── 멤버 삭제 (조직 관리자) ────────────────────────────────────────

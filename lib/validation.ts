@@ -24,6 +24,8 @@ export const loginSchema = z.object({
   pin: pinSchema,
 });
 
+export const setPinSchema = z.object({ pin: pinSchema });
+
 export const createMarketSchema = z
   .object({
     title: z.string().trim().min(1, "제목을 입력하세요").max(140, "제목은 140자 이하"),

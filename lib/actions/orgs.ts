@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../db";
 import { getOrgBySlug } from "../data";
 import { hashKey, verifyKey, newInviteCode, newAdminKey } from "../keys";
-import { isSuperAdmin, isOrgAdmin, setMemberSession } from "../auth";
-import { createOrgSchema, joinSchema, loginSchema } from "../validation";
+import { isSuperAdmin, isOrgAdmin, setMemberSession, getMemberSession } from "../auth";
+import { createOrgSchema, joinSchema, loginSchema, setPinSchema } from "../validation";
 import { MarketStatus, BetStatus } from "../constants";
 
 export type CreateOrgState =
@@ -122,6 +122,27 @@ export async function memberLogin(_prev: { error?: string } | null, formData: Fo
 
   await setMemberSession({ memberId: member.id, nickname: member.nickname, orgId: org.id });
   redirect(`/${slug}`);
+}
+
+// 본인 PIN 변경 (로그인 상태) — 설정 페이지에서 사용
+export async function changeMyPin(
+  _prev: { ok?: boolean; error?: string } | null,
+  formData: FormData,
+) {
+  const orgId = String(formData.get("orgId") ?? "");
+  const slug = String(formData.get("orgSlug") ?? "");
+  const session = await getMemberSession(orgId);
+  if (!session) return { error: "로그인이 필요합니다" };
+
+  const parsed = setPinSchema.safeParse({ pin: formData.get("pin") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
+
+  await prisma.member.update({
+    where: { id: session.memberId },
+    data: { pinHash: hashKey(parsed.data.pin) },
+  });
+  revalidatePath(`/${slug}/settings`);
+  return { ok: true };
 }
 
 // 시즌 리셋: 현재 순위 아카이브 → 잔액 초기화 → 진행중 마켓 무효 → 시즌+1

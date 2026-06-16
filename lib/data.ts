@@ -111,11 +111,11 @@ export async function getLeaderboard(orgId: string): Promise<LeaderboardRow[]> {
   return rows.sort((a, b) => b.balance - a.balance || a.nickname.localeCompare(b.nickname));
 }
 
-// 조직 멤버 목록(잔액 포함) — 관리자 포인트 조정 대상 선택용
+// 조직 멤버 목록(잔액·PIN 설정여부 포함) — 관리자 포인트 조정/멤버 관리용
 export async function listMembers(orgId: string) {
   return prisma.member.findMany({
     where: { orgId },
-    select: { id: true, nickname: true, balance: true },
+    select: { id: true, nickname: true, balance: true, pinHash: true },
     orderBy: { nickname: "asc" },
   });
 }
