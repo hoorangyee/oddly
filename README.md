@@ -8,8 +8,21 @@ leaderboard. No money, just bragging rights.
   total pool in proportion to their stake. The more bets come in, the more the odds (%) move in real time.
 - **Multi-tenant** — many organizations run isolated on a single instance. Each org has its own
   markets, members, and leaderboard.
-- **Nickname-only join** — members enter with an invite code + nickname (no passwords). Only
-  admins act via secret keys.
+- **Nickname-only join** — members enter with an invite code + nickname. Only admins act via secret keys.
+
+## Screenshots
+
+**Markets** — live odds move by pool ratio as bets come in.
+
+![Markets list](docs/screenshot-markets.png)
+
+**Market detail** — odds & payouts, betting form, per-option bettors, and comments.
+
+![Market detail](docs/screenshot-market.png)
+
+**Leaderboard** — ranked by current balance, with win rate & ROI.
+
+![Leaderboard](docs/screenshot-leaderboard.png)
 
 ## Roles
 
