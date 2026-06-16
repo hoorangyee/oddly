@@ -178,20 +178,17 @@ export default async function OrgAdminPage({
           <p className="text-sm text-slate-400">확정할 마켓이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
-            {pending.map((m) => {
-              const closed = m.closesAt.getTime() <= Date.now();
-              return (
-                <li key={m.id} className="flex items-center justify-between gap-2">
-                  <Link
-                    href={`/${orgSlug}/markets/${m.id}`}
-                    className="truncate text-sm text-slate-700 hover:text-violet-700"
-                  >
-                    {m.title}
-                  </Link>
-                  <MarketStatusBadge status={m.status} closed={closed} />
-                </li>
-              );
-            })}
+            {pending.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-2">
+                <Link
+                  href={`/${orgSlug}/markets/${m.id}`}
+                  className="truncate text-sm text-slate-700 hover:text-violet-700"
+                >
+                  {m.title}
+                </Link>
+                <MarketStatusBadge status={m.status} closed={m.closed} />
+              </li>
+            ))}
           </ul>
         )}
         <p className="mt-3 text-xs text-slate-400">

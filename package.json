@@ -18,12 +18,15 @@
     "@libsql/client": "^0.17.3",
     "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@vercel/blob": "^2.4.0",
+    "emoji-picker-react": "^4.19.1",
     "jose": "^6.2.3",
     "nanoid": "^5.1.11",
     "next": "16.2.9",
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-icons": "^5.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

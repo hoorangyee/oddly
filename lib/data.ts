@@ -30,14 +30,26 @@ export async function listMarkets(orgId: string) {
     include: {
       outcomes: { orderBy: { sortOrder: "asc" } },
       creator: { select: { nickname: true } },
+      reactions: {
+        select: {
+          memberId: true,
+          emoji: true,
+          customEmoji: { select: { id: true, shortcode: true, imageUrl: true } },
+        },
+      },
       _count: { select: { bets: true, comments: true } },
     },
     orderBy: { createdAt: "desc" },
   });
+  const marketsWithClosedState = markets.map((market) => ({
+    ...market,
+    closed: isBettingClosed(market),
+  }));
+
   // 진행중(OPEN & 마감 전) 먼저, 그다음 마감/정산
-  return markets.sort((a, b) => {
-    const aOpen = !isBettingClosed(a);
-    const bOpen = !isBettingClosed(b);
+  return marketsWithClosedState.sort((a, b) => {
+    const aOpen = !a.closed;
+    const bOpen = !b.closed;
     if (aOpen !== bOpen) return aOpen ? -1 : 1;
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
@@ -50,10 +62,22 @@ export async function getMarketDetail(orgId: string, marketId: string) {
       outcomes: { orderBy: { sortOrder: "asc" } },
       creator: { select: { nickname: true } },
       comments: {
-        include: { member: { select: { nickname: true } } },
+        include: {
+          member: { select: { nickname: true } },
+          reactions: {
+            include: {
+              customEmoji: { select: { id: true, shortcode: true, imageUrl: true } },
+            },
+          },
+        },
         orderBy: { createdAt: "asc" },
       },
-      reactions: { include: { member: { select: { nickname: true } } } },
+      reactions: {
+        include: {
+          member: { select: { nickname: true } },
+          customEmoji: { select: { id: true, shortcode: true, imageUrl: true } },
+        },
+      },
       bets: {
         include: { member: { select: { nickname: true } } },
         orderBy: { amount: "desc" },
@@ -124,6 +148,14 @@ export async function listMembers(orgId: string) {
 export async function listAnnouncements(orgId: string) {
   return prisma.announcement.findMany({
     where: { orgId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function listCustomEmojis(orgId: string) {
+  return prisma.customEmoji.findMany({
+    where: { orgId },
+    include: { creator: { select: { nickname: true } } },
     orderBy: { createdAt: "desc" },
   });
 }
