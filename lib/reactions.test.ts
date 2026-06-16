@@ -23,6 +23,7 @@ describe("groupReactions", () => {
         label: "👍",
         count: 2,
         active: true,
+        reactorNames: [],
         emoji: "👍",
         customEmoji: null,
       },
@@ -32,6 +33,7 @@ describe("groupReactions", () => {
         label: "🔥",
         count: 1,
         active: false,
+        reactorNames: [],
         emoji: "🔥",
         customEmoji: null,
       },
@@ -62,6 +64,7 @@ describe("groupReactions", () => {
         label: ":party:",
         count: 2,
         active: true,
+        reactorNames: [],
         emoji: null,
         customEmoji: { id: "ce1", shortcode: ":party:", imageUrl: "https://example.com/party.gif" },
       },
@@ -71,10 +74,29 @@ describe("groupReactions", () => {
         label: "🎉",
         count: 1,
         active: true,
+        reactorNames: [],
         emoji: "🎉",
         customEmoji: null,
       },
     ]);
+  });
+
+  test("collects up to five reactor names for hover previews", () => {
+    const reactions = [
+      { memberId: "m1", memberNickname: "김주호", emoji: "👍", customEmoji: null },
+      { memberId: "m2", memberNickname: "이정현", emoji: "👍", customEmoji: null },
+      { memberId: "m3", memberNickname: "이승기", emoji: "👍", customEmoji: null },
+      { memberId: "m4", memberNickname: "노현근", emoji: "👍", customEmoji: null },
+      { memberId: "m5", memberNickname: "현우", emoji: "👍", customEmoji: null },
+      { memberId: "m6", memberNickname: "여섯번째", emoji: "👍", customEmoji: null },
+    ] satisfies Array<ReactionListItem & { memberNickname: string }>;
+
+    const grouped = groupReactions(reactions, null);
+
+    expect(grouped[0]).toMatchObject({
+      key: "unicode:👍",
+      reactorNames: ["김주호", "이정현", "이승기", "노현근", "현우"],
+    });
   });
 });
 
@@ -123,6 +145,7 @@ describe("getTopReactionGroups", () => {
         label: ":shipit:",
         count: 3,
         active: false,
+        reactorNames: [],
         emoji: null,
         customEmoji: {
           id: "ce1",
@@ -136,6 +159,7 @@ describe("getTopReactionGroups", () => {
         label: "🔥",
         count: 2,
         active: false,
+        reactorNames: [],
         emoji: "🔥",
         customEmoji: null,
       },

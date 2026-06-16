@@ -66,8 +66,10 @@ export async function getMarketDetail(orgId: string, marketId: string) {
           member: { select: { nickname: true } },
           reactions: {
             include: {
+              member: { select: { nickname: true } },
               customEmoji: { select: { id: true, shortcode: true, imageUrl: true } },
             },
+            orderBy: { createdAt: "asc" },
           },
         },
         orderBy: { createdAt: "asc" },
@@ -77,6 +79,7 @@ export async function getMarketDetail(orgId: string, marketId: string) {
           member: { select: { nickname: true } },
           customEmoji: { select: { id: true, shortcode: true, imageUrl: true } },
         },
+        orderBy: { createdAt: "asc" },
       },
       bets: {
         include: { member: { select: { nickname: true } } },
