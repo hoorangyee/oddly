@@ -27,21 +27,22 @@ export async function createInquiry(_prev: ActionState, formData: FormData): Pro
 }
 
 // ── 문의 답변 (조직 관리자) — 답변 시 자동 해결 처리 ───────────────
-export async function replyInquiry(formData: FormData): Promise<void> {
+export async function replyInquiry(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const slug = String(formData.get("orgSlug") ?? "");
   const inquiryId = String(formData.get("inquiryId") ?? "");
   const org = await getOrgBySlug(slug);
-  if (!org) throw new Error("조직을 찾을 수 없습니다");
-  if (!(await isOrgAdmin(org.id))) throw new Error("권한이 없습니다");
+  if (!org) return { error: "조직을 찾을 수 없습니다" };
+  if (!(await isOrgAdmin(org.id))) return { error: "권한이 없습니다" };
 
   const parsed = inquiryReplySchema.safeParse({ reply: formData.get("reply") });
-  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "입력값을 확인하세요");
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
 
   await prisma.inquiry.updateMany({
     where: { id: inquiryId, orgId: org.id },
     data: { reply: parsed.data.reply, repliedAt: new Date(), status: InquiryStatus.RESOLVED },
   });
   revalidatePath(`/${slug}/contact`);
+  return { ok: true };
 }
 
 // ── 해결/미해결 토글 (조직 관리자) ─────────────────────────────────

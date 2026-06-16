@@ -7,10 +7,11 @@ import {
   listInquiries,
 } from "@/lib/data";
 import { isOrgAdmin } from "@/lib/auth";
-import { replyInquiry, toggleInquiryStatus, deleteInquiry } from "@/lib/actions/inquiries";
+import { toggleInquiryStatus, deleteInquiry } from "@/lib/actions/inquiries";
 import { InquiryForm } from "@/components/forms/InquiryForm";
+import { InquiryReplyForm } from "@/components/forms/InquiryReplyForm";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { Card, Badge, inputClass } from "@/components/ui";
+import { Card, Badge } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { InquiryStatus } from "@/lib/constants";
 
@@ -72,26 +73,7 @@ export default async function ContactPage({
                     </div>
                   )}
 
-                  <form action={replyInquiry} className="mt-3 space-y-2">
-                    <input type="hidden" name="orgSlug" value={orgSlug} />
-                    <input type="hidden" name="inquiryId" value={q.id} />
-                    <textarea
-                      name="reply"
-                      rows={2}
-                      defaultValue={q.reply ?? ""}
-                      className={inputClass}
-                      maxLength={1000}
-                      placeholder="답변을 입력하세요"
-                    />
-                    <div className="flex items-center justify-end gap-3 text-xs">
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-violet-600 px-3 py-1.5 font-medium text-white hover:bg-violet-700"
-                      >
-                        {q.reply ? "답변 수정" : "답변 등록"}
-                      </button>
-                    </div>
-                  </form>
+                  <InquiryReplyForm orgSlug={orgSlug} inquiryId={q.id} hasReply={!!q.reply} />
 
                   <div className="mt-2 flex items-center justify-end gap-3 text-xs">
                     <form action={toggleInquiryStatus}>
