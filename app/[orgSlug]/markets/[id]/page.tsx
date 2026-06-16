@@ -129,6 +129,7 @@ export default async function MarketPage({
         bets={market.bets.map((b) => ({
           id: b.id,
           outcomeId: b.outcomeId,
+          memberId: b.memberId,
           amount: b.amount,
           status: b.status,
           member: { nickname: b.member.nickname },

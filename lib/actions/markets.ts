@@ -141,38 +141,39 @@ export async function cancelBet(formData: FormData): Promise<void> {
   revalidatePath(`/${slug}/leaderboard`);
 }
 
-// ── 베팅 무효화 (조직 관리자, 정산 전) — 특정 베팅 환불 ────────────
-export async function voidBet(formData: FormData): Promise<void> {
+// ── 베팅 무효화 (조직 관리자, 정산 전) — 한 멤버의 특정 옵션 ACTIVE 베팅 전체 환불 ──
+// 옵션별 현황이 멤버 단위로 합산 표시되므로, 무효화도 그 멤버의 해당 옵션 베팅을 일괄 처리.
+export async function voidMemberOutcomeBets(formData: FormData): Promise<void> {
   const slug = String(formData.get("orgSlug") ?? "");
   const marketId = String(formData.get("marketId") ?? "");
-  const betId = String(formData.get("betId") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const outcomeId = String(formData.get("outcomeId") ?? "");
   const org = await getOrgBySlug(slug);
   if (!org) throw new Error("조직을 찾을 수 없습니다");
   if (!(await isOrgAdmin(org.id))) throw new Error("권한이 없습니다");
 
-  const bet = await prisma.bet.findFirst({
-    where: { id: betId, marketId },
-    include: { market: { select: { orgId: true, status: true } } },
+  const market = await prisma.market.findFirst({
+    where: { id: marketId, orgId: org.id },
+    select: { status: true },
   });
-  if (!bet || bet.market.orgId !== org.id) throw new Error("베팅을 찾을 수 없습니다");
-  if (bet.market.status === MarketStatus.RESOLVED || bet.market.status === MarketStatus.VOID)
+  if (!market) throw new Error("마켓을 찾을 수 없습니다");
+  if (market.status === MarketStatus.RESOLVED || market.status === MarketStatus.VOID)
     throw new Error("이미 정산된 마켓입니다");
-  if (bet.status !== BetStatus.ACTIVE) return; // 멱등: 이미 환불/정산됨
 
-  // REFUNDED 표시 + 풀 차감 + 잔액 환불 (정산 시 ACTIVE 만 집계되므로 제외됨)
+  const bets = await prisma.bet.findMany({
+    where: { marketId, memberId, outcomeId, status: BetStatus.ACTIVE },
+    select: { id: true, amount: true },
+  });
+  if (bets.length === 0) return; // 멱등: 이미 환불/정산됨
+  const total = bets.reduce((s, b) => s + b.amount, 0);
+
+  // 각 베팅 REFUNDED 표시 + 풀에서 합계 차감 + 잔액에 합계 환불 (정산 시 ACTIVE 만 집계)
   await prisma.$transaction([
-    prisma.bet.update({
-      where: { id: bet.id },
-      data: { status: BetStatus.REFUNDED, payout: bet.amount },
-    }),
-    prisma.outcome.update({
-      where: { id: bet.outcomeId },
-      data: { poolTotal: { decrement: bet.amount } },
-    }),
-    prisma.member.update({
-      where: { id: bet.memberId },
-      data: { balance: { increment: bet.amount } },
-    }),
+    ...bets.map((b) =>
+      prisma.bet.update({ where: { id: b.id }, data: { status: BetStatus.REFUNDED, payout: b.amount } }),
+    ),
+    prisma.outcome.update({ where: { id: outcomeId }, data: { poolTotal: { decrement: total } } }),
+    prisma.member.update({ where: { id: memberId }, data: { balance: { increment: total } } }),
   ]);
 
   revalidatePath(`/${slug}/markets/${marketId}`);
