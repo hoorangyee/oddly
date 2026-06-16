@@ -238,12 +238,14 @@ export default async function MarketPage({
 function toReactionItems(
   reactions: {
     memberId: string;
+    member?: { nickname: string } | null;
     emoji: string | null;
     customEmoji: { id: string; shortcode: string; imageUrl: string } | null;
   }[],
 ): ReactionListItem[] {
   return reactions.map((reaction) => ({
     memberId: reaction.memberId,
+    memberNickname: reaction.member?.nickname ?? null,
     emoji: reaction.emoji,
     customEmoji: reaction.customEmoji,
   }));

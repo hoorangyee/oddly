@@ -8,6 +8,7 @@ export type CustomEmojiSummary = {
 
 export type ReactionListItem = {
   memberId: string;
+  memberNickname?: string | null;
   emoji: string | null;
   customEmoji: CustomEmojiSummary | null;
 };
@@ -19,6 +20,7 @@ export type GroupedReaction =
       label: string;
       count: number;
       active: boolean;
+      reactorNames: string[];
       emoji: string;
       customEmoji: null;
     }
@@ -28,9 +30,12 @@ export type GroupedReaction =
       label: string;
       count: number;
       active: boolean;
+      reactorNames: string[];
       emoji: null;
       customEmoji: CustomEmojiSummary;
     };
+
+const MAX_REACTOR_NAMES = 5;
 
 export function isSupportedUnicodeEmoji(value: string): boolean {
   return supportedUnifiedEmojis.has(toUnified(value));
@@ -68,11 +73,13 @@ export function groupReactions(
     if (existing) {
       existing.count += 1;
       existing.active = existing.active || reaction.memberId === currentMemberId;
+      appendReactorName(existing.reactorNames, reaction);
     } else {
       groups.set(group.key, {
         ...group,
         count: 1,
         active: reaction.memberId === currentMemberId,
+        reactorNames: getInitialReactorNames(reaction),
       } as GroupedReaction);
     }
   }
@@ -91,7 +98,7 @@ export function getTopReactionGroups(
 
 function getReactionGroup(
   reaction: ReactionListItem,
-): Omit<GroupedReaction, "count" | "active"> | null {
+): Omit<GroupedReaction, "count" | "active" | "reactorNames"> | null {
   if (reaction.customEmoji) {
     return {
       key: `custom:${reaction.customEmoji.id}`,
@@ -113,4 +120,23 @@ function getReactionGroup(
   }
 
   return null;
+}
+
+function getInitialReactorNames(reaction: ReactionListItem): string[] {
+  const name = getReactorName(reaction);
+  return name ? [name] : [];
+}
+
+function appendReactorName(names: string[], reaction: ReactionListItem) {
+  if (names.length >= MAX_REACTOR_NAMES) return;
+
+  const name = getReactorName(reaction);
+  if (!name || names.includes(name)) return;
+
+  names.push(name);
+}
+
+function getReactorName(reaction: ReactionListItem): string | null {
+  const name = reaction.memberNickname?.trim();
+  return name ? name : null;
 }

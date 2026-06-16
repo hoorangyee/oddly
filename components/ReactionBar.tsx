@@ -221,36 +221,38 @@ export function ReactionBar({
   return (
     <div className={`relative flex flex-wrap items-center gap-2 ${className}`}>
       {groupedReactions.map((reaction) => (
-        <button
-          key={reaction.key}
-          type="button"
-          disabled={!canReact || isPending}
-          onClick={() =>
-            submitReaction(
-              reaction.kind === "unicode"
-                ? { emoji: reaction.emoji }
-                : { customEmojiId: reaction.customEmoji.id },
-            )
-          }
-          aria-label={`${reaction.label} 반응 ${reaction.active ? "제거" : "추가"}`}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            reaction.active
-              ? "border-violet-400 bg-violet-50"
-              : "border-slate-200 bg-white hover:border-slate-300"
-          }`}
-        >
-          {reaction.kind === "custom" ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Custom emoji URLs are user-uploaded Blob URLs.
-            <img
-              src={reaction.customEmoji.imageUrl}
-              alt={reaction.customEmoji.shortcode}
-              className="h-5 w-5 object-contain"
-            />
-          ) : (
-            <span>{reaction.emoji}</span>
-          )}
-          <span className="tabular-nums text-xs text-slate-500">{reaction.count}</span>
-        </button>
+        <span key={reaction.key} className="group relative inline-flex">
+          <button
+            type="button"
+            disabled={!canReact || isPending}
+            onClick={() =>
+              submitReaction(
+                reaction.kind === "unicode"
+                  ? { emoji: reaction.emoji }
+                  : { customEmojiId: reaction.customEmoji.id },
+              )
+            }
+            aria-label={`${reaction.label} 반응 ${reaction.active ? "제거" : "추가"}`}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              reaction.active
+                ? "border-violet-400 bg-violet-50"
+                : "border-slate-200 bg-white hover:border-slate-300"
+            }`}
+          >
+            {reaction.kind === "custom" ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Custom emoji URLs are user-uploaded Blob URLs.
+              <img
+                src={reaction.customEmoji.imageUrl}
+                alt={reaction.customEmoji.shortcode}
+                className="h-5 w-5 object-contain"
+              />
+            ) : (
+              <span>{reaction.emoji}</span>
+            )}
+            <span className="tabular-nums text-xs text-slate-500">{reaction.count}</span>
+          </button>
+          {reaction.reactorNames.length > 0 && <ReactionHoverCard reaction={reaction} />}
+        </span>
       ))}
 
       <button
@@ -351,6 +353,33 @@ export function ReactionBar({
         </div>
       )}
     </div>
+  );
+}
+
+function ReactionHoverCard({ reaction }: { reaction: GroupedReaction }) {
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden min-w-32 max-w-48 -translate-x-1/2 flex-col items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-center shadow-lg group-hover:flex group-focus-within:flex"
+    >
+      {reaction.kind === "custom" ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Custom emoji URLs are user-uploaded Blob URLs.
+        <img
+          src={reaction.customEmoji.imageUrl}
+          alt=""
+          className="mb-2 h-14 w-14 rounded-sm object-contain"
+        />
+      ) : (
+        <span className="mb-2 text-5xl leading-none">{reaction.emoji}</span>
+      )}
+      <span className="break-keep text-xs font-semibold leading-5 text-slate-800">
+        {reaction.reactorNames.join(", ")}
+      </span>
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-slate-200 bg-white"
+      />
+    </span>
   );
 }
 
