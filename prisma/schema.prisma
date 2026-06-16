@@ -35,6 +35,7 @@ model Member {
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   nickname  String
   balance   Int
+  pinHash   String?  // 멤버 재로그인용 PIN 해시. null = 아직 미설정(레거시/미클레임)
   createdAt DateTime @default(now())
 
   createdMarkets   Market[]   @relation("MarketCreator")
@@ -51,8 +52,8 @@ model Market {
   id          String   @id @default(cuid())
   orgId       String
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  creatorId   String
-  creator     Member   @relation("MarketCreator", fields: [creatorId], references: [id])
+  creatorId   String?
+  creator     Member?  @relation("MarketCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   title       String
   description String   @default("")
   type        String   @default("BINARY") // BINARY | MULTI

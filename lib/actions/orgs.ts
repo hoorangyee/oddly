@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../db";
 import { getOrgBySlug } from "../data";
-import { hashKey, newInviteCode, newAdminKey } from "../keys";
+import { hashKey, verifyKey, newInviteCode, newAdminKey } from "../keys";
 import { isSuperAdmin, isOrgAdmin, setMemberSession } from "../auth";
-import { createOrgSchema, joinSchema } from "../validation";
+import { createOrgSchema, joinSchema, loginSchema } from "../validation";
 import { MarketStatus, BetStatus } from "../constants";
 
 export type CreateOrgState =
@@ -56,13 +56,16 @@ export async function deleteOrganization(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
+// 가입 — 신규 생성, 또는 PIN 미설정(레거시) 계정의 PIN 클레임. 둘 다 초대코드 필요.
 export async function joinOrg(_prev: { error?: string } | null, formData: FormData) {
   const slug = String(formData.get("orgSlug") ?? "");
   const parsed = joinSchema.safeParse({
     inviteCode: formData.get("inviteCode"),
     nickname: formData.get("nickname"),
+    pin: formData.get("pin"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
+  const { nickname, pin } = parsed.data;
 
   const org = await getOrgBySlug(slug);
   if (!org) return { error: "조직을 찾을 수 없습니다" };
@@ -70,14 +73,54 @@ export async function joinOrg(_prev: { error?: string } | null, formData: FormDa
     return { error: "초대 코드가 올바르지 않습니다" };
   }
 
-  try {
-    const member = await prisma.member.create({
-      data: { orgId: org.id, nickname: parsed.data.nickname, balance: org.startingBalance },
-    });
-    await setMemberSession({ memberId: member.id, nickname: member.nickname, orgId: org.id });
-  } catch {
-    return { error: "이미 사용 중인 닉네임입니다" };
+  const existing = await prisma.member.findUnique({
+    where: { orgId_nickname: { orgId: org.id, nickname } },
+  });
+
+  if (existing) {
+    // PIN 이 이미 있으면 가입 불가(로그인으로 유도), 없으면 클레임(레거시 계정에 PIN 설정)
+    if (existing.pinHash) {
+      return { error: "이미 사용 중인 닉네임입니다. 로그인을 이용하세요." };
+    }
+    await prisma.member.update({ where: { id: existing.id }, data: { pinHash: hashKey(pin) } });
+    await setMemberSession({ memberId: existing.id, nickname: existing.nickname, orgId: org.id });
+    redirect(`/${slug}`);
   }
+
+  let member;
+  try {
+    member = await prisma.member.create({
+      data: { orgId: org.id, nickname, balance: org.startingBalance, pinHash: hashKey(pin) },
+    });
+  } catch {
+    return { error: "이미 사용 중인 닉네임입니다. 로그인을 이용하세요." };
+  }
+  await setMemberSession({ memberId: member.id, nickname: member.nickname, orgId: org.id });
+  redirect(`/${slug}`);
+}
+
+// 재로그인 — 닉네임 + PIN
+export async function memberLogin(_prev: { error?: string } | null, formData: FormData) {
+  const slug = String(formData.get("orgSlug") ?? "");
+  const parsed = loginSchema.safeParse({
+    nickname: formData.get("nickname"),
+    pin: formData.get("pin"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요" };
+
+  const org = await getOrgBySlug(slug);
+  if (!org) return { error: "조직을 찾을 수 없습니다" };
+
+  const member = await prisma.member.findUnique({
+    where: { orgId_nickname: { orgId: org.id, nickname: parsed.data.nickname } },
+  });
+  if (!member) return { error: "가입되지 않은 닉네임입니다" };
+  if (!member.pinHash) {
+    return { error: "아직 PIN이 없는 계정입니다. ‘가입’에서 초대코드로 PIN을 설정하세요." };
+  }
+  if (!verifyKey(parsed.data.pin, member.pinHash)) return { error: "PIN이 올바르지 않습니다" };
+
+  await setMemberSession({ memberId: member.id, nickname: member.nickname, orgId: org.id });
   redirect(`/${slug}`);
 }
 

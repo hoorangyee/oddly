@@ -13,6 +13,7 @@ import { deleteAnnouncement } from "@/lib/actions/admin";
 import { OrgAdminLoginForm } from "@/components/forms/OrgAdminLoginForm";
 import { AdjustPointsForm } from "@/components/forms/AdjustPointsForm";
 import { AnnouncementForm } from "@/components/forms/AnnouncementForm";
+import { DeleteMemberButton } from "@/components/forms/DeleteMemberButton";
 import { Card, MarketStatusBadge } from "@/components/ui";
 import { formatDateTime, formatPoints } from "@/lib/format";
 import { MarketStatus } from "@/lib/constants";
@@ -126,6 +127,29 @@ export default async function OrgAdminPage({
                     {formatPoints(Math.abs(a.amount))}
                   </span>
                   <span className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* 멤버 관리 */}
+      <Card className="p-5">
+        <h2 className="mb-1 text-sm font-semibold text-slate-500">멤버 관리 ({members.length})</h2>
+        <p className="mb-3 text-xs text-slate-400">
+          삭제 시 해당 멤버의 베팅·댓글·기록이 모두 삭제됩니다. (만든 마켓은 유지)
+        </p>
+        {members.length === 0 ? (
+          <p className="text-sm text-slate-400">멤버가 없습니다.</p>
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {members.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-2">
+                <span className="truncate text-slate-700">{m.nickname}</span>
+                <span className="flex items-center gap-3">
+                  <span className="tabular-nums text-slate-500">{formatPoints(m.balance)}</span>
+                  <DeleteMemberButton orgSlug={orgSlug} memberId={m.id} nickname={m.nickname} />
                 </span>
               </li>
             ))}

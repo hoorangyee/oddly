@@ -11,7 +11,7 @@ type MarketCardData = {
   status: string;
   closesAt: Date;
   resolvedOutcomeId: string | null;
-  creator: { nickname: string };
+  creator: { nickname: string } | null;
   outcomes: { id: string; label: string; poolTotal: number }[];
   _count: { bets: number; comments: number };
 };
@@ -38,7 +38,7 @@ export function MarketCard({ orgSlug, market }: { orgSlug: string; market: Marke
           <span>베팅 {market._count.bets}</span>
           <span>💬 {market._count.comments}</span>
           <span className="ml-auto">
-            {market.status === "OPEN" ? closesInLabel(market.closesAt) : `by ${market.creator.nickname}`}
+            {market.status === "OPEN" ? closesInLabel(market.closesAt) : `by ${market.creator?.nickname ?? "탈퇴한 사용자"}`}
           </span>
         </div>
       </Card>

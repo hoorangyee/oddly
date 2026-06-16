@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { getOrgBySlug } from "../data";
 import { isOrgAdmin } from "../auth";
 import { adjustPointsSchema, announcementSchema, ADJUST_ALL } from "../validation";
+import { BetStatus } from "../constants";
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -67,6 +68,39 @@ export async function createAnnouncement(
   revalidatePath(`/${slug}`);
   revalidatePath(`/${slug}/admin`);
   return { ok: true };
+}
+
+// ── 멤버 삭제 (조직 관리자) ────────────────────────────────────────
+// ACTIVE 베팅 스테이크를 풀에서 차감해 잔여 베팅자 정합성을 유지한 뒤 멤버 삭제.
+// 삭제 시 베팅·댓글·반응·문의·포인트로그는 cascade 삭제, 생성한 마켓은 creatorId=null 로 보존.
+export async function deleteMember(formData: FormData): Promise<void> {
+  const slug = String(formData.get("orgSlug") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const org = await getOrgBySlug(slug);
+  if (!org) throw new Error("조직을 찾을 수 없습니다");
+  if (!(await isOrgAdmin(org.id))) throw new Error("권한이 없습니다");
+
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, orgId: org.id },
+    include: { bets: { where: { status: BetStatus.ACTIVE }, select: { outcomeId: true, amount: true } } },
+  });
+  if (!member) throw new Error("멤버를 찾을 수 없습니다");
+
+  const ops = [];
+  for (const b of member.bets) {
+    ops.push(
+      prisma.outcome.update({
+        where: { id: b.outcomeId },
+        data: { poolTotal: { decrement: b.amount } },
+      }),
+    );
+  }
+  ops.push(prisma.member.delete({ where: { id: member.id } }));
+  await prisma.$transaction(ops);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/admin`);
+  revalidatePath(`/${slug}/leaderboard`);
 }
 
 // ── 공지사항 삭제 (조직 관리자) ────────────────────────────────────
